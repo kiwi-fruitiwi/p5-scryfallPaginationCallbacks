@@ -12,6 +12,7 @@ let instructions
 let debugCorner /* output debug text in the bottom left corner of the canvas */
 
 let scryfallData /* loaded scryfall data */
+let dataPage2
 
 function preload() {
     font = loadFont('data/consola.ttf')
@@ -25,24 +26,45 @@ function setup() {
     colorMode(HSB, 360, 100, 100, 100)
     textFont(font, 14)
 
-    for (const card of scryfallData['data']) {
-        console.log(card['name'])
-    }
-
-    console.log(scryfallData['data'].length)
-
     /* initialize instruction div */
     instructions = select('#ins')
     instructions.html(`<pre>
         numpad 1 → freeze sketch</pre>`)
 
     debugCorner = new CanvasDebugCorner(5)
+
+
+
+    /* scryfall data */
+    for (const card of scryfallData['data']) {
+        console.log(card['name'])
+    }
+
+    console.log(scryfallData['data'].length)
+
+    /* check for scryfall JSON having more pages */
+    if (scryfallData['has_more']) {
+        let pageTwoJSONURL = scryfallData['next_page']
+        dataPage2 = loadJSON(pageTwoJSONURL, gotData)
+    }
+}
+
+
+function gotData(data) {
+    dataPage2 = data
+    for (const card of dataPage2['data']) {
+        console.log(card['name'])
+    }
 }
 
 
 function draw() {
     background(234, 34, 24)
-    noLoop()
+
+    if (dataPage2) {
+        debugCorner.setText(`page 2 length: ${dataPage2['data'].length}`, 0)
+    }
+
 
     /* debugCorner needs to be last so its z-index is highest */
     debugCorner.setText(`frameCount: ${frameCount}`, 2)
