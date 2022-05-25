@@ -3,8 +3,11 @@
  *  @date 2022.05.24
  *
  *  ☒ load 1st page from api.scryfall
- *  ☐ use callback to load 2nd page
- *  ☐ use callback loop to load the next n pages until next_page is null
+ *  ☒ use callback to load 2nd page
+ *  ☒ find api.scryfall query with more than 2 pages
+ *      api.scryfall.com/cards/search?q=set:snc+OR+set:khm
+ *  ☒ use callback loop to load the next n pages until next_page is null
+ *  ☐
  */
 
 let font
@@ -12,11 +15,15 @@ let instructions
 let debugCorner /* output debug text in the bottom left corner of the canvas */
 
 let scryfallData /* loaded scryfall data */
-let dataPage2
+let cards = [] /* list of card names we've retrieved from scryfall */
+let lastRequestTime = 0
 
 function preload() {
     font = loadFont('data/consola.ttf')
-    scryfallData = loadJSON('https://api.scryfall.com/cards/search?q=set:snc')
+
+    let req = 'https://api.scryfall.com/cards/search?q=set:snc+OR+set:khm'
+    lastRequestTime = millis()
+    scryfallData = loadJSON(req)
 }
 
 
@@ -34,10 +41,10 @@ function setup() {
     debugCorner = new CanvasDebugCorner(5)
 
 
-
-    /* scryfall data */
+    /* scryfall data: scryfallData has finished loading from preLoad. add
+     cards */
     for (const card of scryfallData['data']) {
-        console.log(card['name'])
+        cards.push(card['name'])
     }
 
     console.log(scryfallData['data'].length)
@@ -45,15 +52,24 @@ function setup() {
     /* check for scryfall JSON having more pages */
     if (scryfallData['has_more']) {
         let pageTwoJSONURL = scryfallData['next_page']
-        dataPage2 = loadJSON(pageTwoJSONURL, gotData)
+        loadJSON(pageTwoJSONURL, gotData)
     }
 }
 
 
 function gotData(data) {
-    dataPage2 = data
-    for (const card of dataPage2['data']) {
-        console.log(card['name'])
+    console.log(`data retrieved! ${data['data'].length}`)
+    console.log(`request time → ${millis() - lastRequestTime}`)
+    lastRequestTime = millis()
+
+    for (const card of data['data']) {
+        cards.push(card['name'])
+    }
+
+    if (data['has_more']) {
+        loadJSON(data['next_page'], gotData)
+    } else {
+        console.log(`total request time → ${millis()}`)
     }
 }
 
@@ -61,14 +77,10 @@ function gotData(data) {
 function draw() {
     background(234, 34, 24)
 
-    if (dataPage2) {
-        debugCorner.setText(`page 2 length: ${dataPage2['data'].length}`, 0)
-    }
-
-
     /* debugCorner needs to be last so its z-index is highest */
     debugCorner.setText(`frameCount: ${frameCount}`, 2)
     debugCorner.setText(`fps: ${frameRate().toFixed(0)}`, 1)
+    debugCorner.setText(`page 2 length: ${cards.length}`, 0)
     debugCorner.show()
 }
 
@@ -79,6 +91,12 @@ function keyPressed() {
         noLoop()
         instructions.html(`<pre>
             sketch stopped</pre>`)
+    }
+
+    if (key === 'e') {
+        for (const card of cards) {
+            console.log(card)
+        }
     }
 }
 
