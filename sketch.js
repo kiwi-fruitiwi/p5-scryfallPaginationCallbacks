@@ -2,7 +2,7 @@
  *  @author kiwi
  *  @date 2022.05.24
  *
- *  ☐ load 1st page from api.scryfall
+ *  ☒ load 1st page from api.scryfall
  *  ☐ use callback to load 2nd page
  *  ☐ use callback loop to load the next n pages until next_page is null
  */
@@ -15,6 +15,7 @@ let scryfallData /* loaded scryfall data */
 
 function preload() {
     font = loadFont('data/consola.ttf')
+    scryfallData = loadJSON('https://api.scryfall.com/cards/search?q=set:snc')
 }
 
 
@@ -23,6 +24,12 @@ function setup() {
     cnv.parent('#canvas')
     colorMode(HSB, 360, 100, 100, 100)
     textFont(font, 14)
+
+    for (const card of scryfallData['data']) {
+        console.log(card['name'])
+    }
+
+    console.log(scryfallData['data'].length)
 
     /* initialize instruction div */
     instructions = select('#ins')
@@ -35,7 +42,7 @@ function setup() {
 
 function draw() {
     background(234, 34, 24)
-
+    noLoop()
 
     /* debugCorner needs to be last so its z-index is highest */
     debugCorner.setText(`frameCount: ${frameCount}`, 2)
