@@ -21,7 +21,7 @@ let lastRequestTime = 0
 function preload() {
     font = loadFont('data/consola.ttf')
 
-    let req = 'https://api.scryfall.com/cards/search?q=set:snc+OR+set:khm'
+    let req = 'https://api.scryfall.com/cards/search?q=set:dmu'
     lastRequestTime = millis()
     scryfallData = loadJSON(req)
 }
@@ -44,7 +44,7 @@ function setup() {
     /* scryfall data: scryfallData has finished loading from preLoad. add
      cards */
     for (const card of scryfallData['data']) {
-        cards.push(card['name'])
+        cards.push(getCustomCardFormat(card))
     }
 
     console.log(scryfallData['data'].length)
@@ -57,20 +57,60 @@ function setup() {
 }
 
 
+/** add card format data to cards array :3 */
+function getCustomCardFormat(cardJSON) {
+    return {
+        'name': cardJSON['name'],
+        'colors': cardJSON['colors'],
+        'mana_cost': cardJSON['mana_cost'],
+        'cmc': cardJSON['cmc'],
+        'type_line': cardJSON['type_line'],
+        'oracle_text': cardJSON['oracle_text'],
+        'collector_number': int(cardJSON['collector_number']),
+        'art_crop_uri': cardJSON['art_crop'], /*626x457 ½ MB*/
+        'normal_uri': cardJSON['normal'],
+        'large_uri': cardJSON['large'],
+        'png_uri': cardJSON['png'] /* 745x1040 */
+
+        /* normal 488x680 64KB, large 672x936 100KB png 745x1040 1MB*/
+    }
+}
+
+
 function gotData(data) {
     console.log(`data retrieved! ${data['data'].length}`)
     console.log(`request time → ${millis() - lastRequestTime}`)
     lastRequestTime = millis()
 
     for (const card of data['data']) {
-        cards.push(card['name'])
+        cards.push(getCustomCardFormat(card))
     }
 
     if (data['has_more']) {
         loadJSON(data['next_page'], gotData)
     } else {
         console.log(`total request time → ${millis()}`)
+        processData()
     }
+}
+
+
+/** call me after all the data is finished loading! */
+function processData() {
+    /*  display only cards that are multicolored. note this can be done via
+        query → c:m, set:dmu
+     */
+    console.log(`total cards loaded: ${cards.length}`)
+
+    let count = 0
+    for (const card of cards) {
+        if (card.colors.length > 1) {
+            count++
+            console.log(`${card.name} ${card.mana_cost}`)
+        }
+    }
+
+    console.log(`${count} cards total`)
 }
 
 
